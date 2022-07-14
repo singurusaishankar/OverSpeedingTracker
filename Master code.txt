@@ -1,0 +1,88 @@
+/*
+   
+   This is the Master: this Code recieves a Float value from the Slave
+
+   Connection needed
+   Master Side                   Slave Side
+   GND                           GND
+   A5                            A5         [Clock or SCL]
+   A4                            A4         [Data Line or SDA]
+*/
+#include <Wire.h>
+int senpin=7;
+int senval=0;
+int ligpin=6;
+int buzpin=3;
+int current;
+int start;
+int period=1;
+int state=1;
+float km;
+float tyrecir = 1.35;
+float sps;
+
+
+
+
+void setup() {
+
+  Wire.begin();        // join i2c bus (address optional for master)
+  Serial.begin(9600);  // start serial for output
+  Serial.begin(9600);
+pinMode(senpin,INPUT);
+pinMode(ligpin,OUTPUT);
+pinMode(buzpin,OUTPUT);
+start=millis();
+}
+
+void loop() {
+  Wire.requestFrom(2, 3);    // request 20 bytes from slave device #2
+  String string, string1;
+  do   // slave may send less than requested
+  {
+    char c = Wire.read(); // receive a byte as character
+
+    string = string + c; //Keep saving whatever is comming
+
+    string1 = string.substring(0, 2); //slpit String from 0 to 8
+     
+
+
+  } while (Wire.available());
+ 
+
+ 
+  //Serial.print(string1);
+ 
+
+  current=millis();
+  senval=digitalRead(senpin);
+  if(senval==0 && state==1){
+    state=0;
+    if(current-start>=period && state==0){
+       if(current-start>1 && current-start!=2){
+      sps=((1.96)/(current-start)*1000);
+      km=sps*3.6;
+      if(km<150){
+      Serial.print(km);
+      Serial.println();
+      }
+     
+     }
+   start=current;
+    }
+  }else{
+    if(current-start>=0 && state==0){
+    start=current;
+   
+    state=1;
+    }
+  }
+  if(km<150 && km >= string1.toFloat()){
+     digitalWrite(ligpin,HIGH);
+     digitalWrite(buzpin,HIGH);
+   
+  }
+ digitalWrite(ligpin,LOW);
+ digitalWrite(buzpin,LOW);
+}
